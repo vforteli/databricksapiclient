@@ -1,0 +1,49 @@
+name: databricks-deploy
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    concurrency:
+      group: deploy-databricks-group
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "az login"
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Deploy notebooks
+        run: |
+          az account subscription list
+
+          export DATABRICKS_TOKEN=$(az account get-access-token --resource 2ff814a6-3304-4ab8-85cb-cd0e6f879c1d --query "accessToken" -o tsv)
+          export DATABRICKS_BASE_URL=https://adb-3793429365020291.11.azuredatabricks.net          
+          export DATABRICKS_SOURCE_DIRECTORY=tunk
+          export DATABRICKS_DESTINATION_DIRECTORY="/Shared/stuff5pythonpipeline"         
+
+          python -m pip install --upgrade pip
+          pip install -r dbuploader/requirements.txt
+
+          python dbuploader/dbupload.py

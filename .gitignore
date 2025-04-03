@@ -1,0 +1,9 @@
+node_modules/
+ExportedArmTemplate/
+downloads/
+__pycache__/
+bin/
+obj/
+.idea/
+SECRETS.md
+.env
